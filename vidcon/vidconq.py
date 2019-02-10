@@ -88,23 +88,37 @@ def do():
                             orig_num_of_vstreams += 1
                             # Get only for first stream
                             if orig_num_of_vstreams == 1:
+                                log.debug('extracting vcodec attributes')
                                 orig_vcodec_name = codec
-                                orig_vcodec_profile = stream['profile']
-                                orig_vcodec_width = stream['width']
-                                orig_vcodec_height = stream['height']
-                                orig_vcodec_aspect_ratio = stream['display_aspect_ratio']
-                                orig_vcodec_pix_fmt = stream['pix_fmt']
-                                orig_vcodec_level = stream['level']
+                                try:
+                                    orig_vcodec_profile = stream['profile']
+                                    orig_vcodec_width = stream['width']
+                                    orig_vcodec_height = stream['height']
+                                    orig_vcodec_aspect_ratio = stream['display_aspect_ratio']
+                                    orig_vcodec_pix_fmt = stream['pix_fmt']
+                                    orig_vcodec_level = stream['level']
+                                except Exception as e:
+                                    log.warning('some vcodec attributes might not be available')
+                                    log.warning(e)
+                                else:
+                                    pass
                         else:
                             orig_num_of_astreams += 1
                             # Get only for first stream
                             if orig_num_of_astreams == 1:
+                                log.debug('extracting acodec attributes')
                                 orig_acodec_name = codec
-                                orig_acodec_sample_fmt = stream['sample_fmt']
-                                orig_acodec_sample_rate = stream['sample_rate']
-                                orig_acodec_channels = stream['channels']
-                                orig_acodec_channel_layout = stream['channel_layout']
-                                orig_acodec_bit_rate = stream['bit_rate']
+                                try:
+                                    orig_acodec_sample_fmt = stream['sample_fmt']
+                                    orig_acodec_sample_rate = stream['sample_rate']
+                                    orig_acodec_channels = stream['channels']
+                                    orig_acodec_channel_layout = stream['channel_layout']
+                                    orig_acodec_bit_rate = stream['bit_rate']
+                                except Exception as e:
+                                    log.warning('some acodec attributes might not be available')
+                                    log.warning(e)
+                                else:
+                                    pass
 
                         if codec != 'mjpeg':
                             not_supported = ''
