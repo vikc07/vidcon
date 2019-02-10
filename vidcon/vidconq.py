@@ -8,7 +8,6 @@ from sqlalchemy import *
 from datetime import datetime
 import json
 import os
-import shutil
 from gpm import formatting
 from lib import func
 
@@ -26,7 +25,8 @@ def do():
     log.info('fetching all files')
     for filename in func.get_files():
         ext = func.get_file_extension(filename)
-        fsize = formatting.fsize_pretty(os.stat(filename).st_size, return_size_only=True, unit='gb')
+        fsize_in_bytes = os.stat(filename).st_size
+        fsize = formatting.fsize_pretty(fsize_in_bytes, return_size_only=True, unit='gb')
         # Is it a file, of required file type and not already in the queue? If yes, then proceed
         if os.path.isfile(filename) and (ext in cfg.VIDCON_FILE_TYPES) and (filename not in queue):
             movie = {}
@@ -34,13 +34,13 @@ def do():
                 log.info(ext.strip('.') + ': ' + filename)
                 movie['path'] = filename
                 movie['title'] = func.get_file_name_without_extension(filename)
+                movie['orig_fsize'] = fsize_in_bytes
                 movies.append(movie)
             else:
                 log.debug('skipped: ' + filename)
         else:
             log.debug('skipped: ' + filename)
 
-    log.info('processing')
     for movie in movies:
         convert_audio = False
         convert_video = False
@@ -61,10 +61,51 @@ def do():
             if ffprobe_success:
                 movie_info = json.loads(ffprobe)
                 log.info('container: ' + movie_info['format']['format_name'])
+                orig_num_of_streams = len(movie_info['streams'])
+                orig_num_of_astreams = 0
+                orig_num_of_vstreams = 0
+                orig_num_of_sstreams = 0
+                orig_num_of_ostreams = 0
+                orig_vcodec_name = ''
+                orig_vcodec_profile = ''
+                orig_vcodec_width = 0
+                orig_vcodec_height = 0
+                orig_vcodec_aspect_ratio = ''
+                orig_vcodec_pix_fmt = ''
+                orig_vcodec_level = ''
+                orig_acodec_name = ''
+                orig_acodec_sample_fmt = ''
+                orig_acodec_sample_rate = ''
+                orig_acodec_channels = 0
+                orig_acodec_channel_layout = ''
+                orig_acodec_bit_rate = ''
                 for stream in movie_info['streams']:
                     stream_type = stream['codec_type']
                     if stream_type in ['audio', 'video']:
                         codec = stream['codec_name']
+
+                        if stream_type == 'video':
+                            orig_num_of_vstreams += 1
+                            # Get only for first stream
+                            if orig_num_of_vstreams == 1:
+                                orig_vcodec_name = codec
+                                orig_vcodec_profile = stream['profile']
+                                orig_vcodec_width = stream['width']
+                                orig_vcodec_height = stream['height']
+                                orig_vcodec_aspect_ratio = stream['display_aspect_ratio']
+                                orig_vcodec_pix_fmt = stream['pix_fmt']
+                                orig_vcodec_level = stream['level']
+                        else:
+                            orig_num_of_astreams += 1
+                            # Get only for first stream
+                            if orig_num_of_astreams == 1:
+                                orig_acodec_name = codec
+                                orig_acodec_sample_fmt = stream['sample_fmt']
+                                orig_acodec_sample_rate = stream['sample_rate']
+                                orig_acodec_channels = stream['channels']
+                                orig_acodec_channel_layout = stream['channel_layout']
+                                orig_acodec_bit_rate = stream['bit_rate']
+
                         if codec != 'mjpeg':
                             not_supported = ''
                             if (stream_type == 'video') and (codec not in cfg.VIDCON_OK_V_FORMATS):
@@ -76,13 +117,18 @@ def do():
                             log.info('stream: ' + str(stream['index']))
                             log.info('type: ' + stream['codec_type'])
                             log.info('codec: ' + codec + ' ' + not_supported)
+                        else:
+                            log.info('found mjpeg, ignoring')
+                    elif stream_type == 'subtitle':
+                        orig_num_of_sstreams += 1
+                    else:
+                        orig_num_of_ostreams += 1
 
                 vcodec = 'copy'
                 acodec = 'copy'
                 complete_flag = False
                 ts_complete = None
                 no_conversion_required = False
-                update_queue = True
 
                 # output file will be of format title/title.ext
                 output_folder = func.get_file_path(movie_name)
@@ -118,7 +164,28 @@ def do():
                     'vcodec': vcodec,
                     'acodec': acodec,
                     'complete_flag': complete_flag,
-                    'ts_complete': ts_complete
+                    'ts_complete': ts_complete,
+                    'orig_fsize': movie['orig_fsize'],
+                    'orig_format': movie_info['format']['format_name'],
+                    'orig_num_of_streams': orig_num_of_streams,
+                    'orig_num_of_astreams': orig_num_of_astreams,
+                    'orig_num_of_vstreams': orig_num_of_vstreams,
+                    'orig_num_of_sstreams': orig_num_of_sstreams,
+                    'orig_num_of_ostreams': orig_num_of_ostreams,
+                    'orig_vcodec_name': orig_vcodec_name,
+                    'orig_vcodec_profile': orig_vcodec_profile,
+                    'orig_vcodec_width': orig_vcodec_width,
+                    'orig_vcodec_height': orig_vcodec_height,
+                    'orig_vcodec_aspect_ratio': orig_vcodec_aspect_ratio,
+                    'orig_vcodec_pix_fmt': orig_vcodec_pix_fmt,
+                    'orig_vcodec_level': orig_vcodec_level,
+                    'orig_acodec_name': orig_acodec_name,
+                    'orig_acodec_sample_fmt': orig_acodec_sample_fmt,
+                    'orig_acodec_sample_rate': orig_acodec_sample_rate,
+                    'orig_acodec_channels': orig_acodec_channels,
+                    'orig_acodec_channel_layout': orig_acodec_channel_layout,
+                    'orig_acodec_bit_rate': orig_acodec_bit_rate,
+                    'ffprobe_metadata': ffprobe
                 }
                 queue_pos = func.add_to_queue(row)
                 if (len(queue_pos) > 0) and (not no_conversion_required):

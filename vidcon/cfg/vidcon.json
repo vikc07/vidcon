@@ -1,5 +1,5 @@
 {
-  "LOG_LEVEL": 20,
+  "LOG_LEVEL": 10,
   "LOG_TSFORMAT": "YYYYMMDD",
   "REMOVE_SRC_FILE": 0,
   "DB_CONN": "mysql+pymysql://vidcon_test:vidcon_test_123@jarvis:3307/vidcon_test?charset=utf8",
