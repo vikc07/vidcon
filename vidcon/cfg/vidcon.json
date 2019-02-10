@@ -1,5 +1,5 @@
 {
-  "LOG_LEVEL": 10,
+  "LOG_LEVEL": 20,
   "LOG_TSFORMAT": "YYYYMMDD",
   "REMOVE_SRC_FILE": 0,
   "DB_CONN": "mysql+pymysql://vidcon_test:vidcon_test_123@jarvis:3307/vidcon_test?charset=utf8",
@@ -7,18 +7,20 @@
   "VIDCON_DEFALUT_ACODEC": "ac3 -ac 6 -ab 640k -max_muxing_queue_size 1024 -ar 48000",
   "VIDCON_DEFALUT_VCODEC": "libx264 -profile:v high -level:v 4.0",
   "VIDCON_DEFAULT_EXT": ".mkv",
-  "VIDCON_DOWNLOAD_FOLDER": "/storage/downloads/completed/Movies",
+  "VIDCON_MONITOR_FOLDER_RECURSIVE": 1,
+  "VIDCON_MONITOR_FOLDER": [
+    "/storage/downloads/vidcontest/movies",
+    "/storage/downloads/vidcontest/tv"
+  ],
   "VIDCON_FILE_TYPES": [
     ".mkv",
     ".mp4",
     ".mov",
     ".mpg",
     ".avi",
-    ".m2ts",
-    ".rar"
+    ".m2ts"
   ],
-  "VIDCON_MOVIE_FOLDER": "/storage/downloads/completed/Movies/converted",
-  "VIDCON_TEMP_FOLDER": "/storage/downloads/completed",
+  "VIDCON_TEMP_FOLDER": "/storage/downloads/vidcontest/temp",
   "VIDCON_OK_A_FORMATS": [
     "ac3",
     "aac",

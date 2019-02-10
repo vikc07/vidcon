@@ -95,8 +95,12 @@ def ls(path, recursive=False):
     return files
 
 
-def get_downloaded_files():
-    return ls(cfg.VIDCON_DOWNLOAD_FOLDER, recursive=True)
+def get_files():
+    files = []
+    for folder in cfg.VIDCON_MONITOR_FOLDER:
+        files = files + ls(folder, recursive=cfg.VIDCON_MONITOR_FOLDER_RECURSIVE)
+
+    return files
 
 
 def get_file_extension(file):
@@ -114,31 +118,6 @@ def call_process(cmd):
     stdout, stderr = [x.decode('utf-8', errors='surrogateescape') for x in proc.communicate()]
 
     return {'returncode': proc.returncode, 'stdout': stdout + stderr}
-
-
-def rar_extract(file):
-    # Warning: requires unrar to be installed
-    unrar_cmd = ['unrar', 'e', '-y', file, get_file_path(file)]
-    out = call_process(unrar_cmd)
-    if out['returncode'] == 0:
-        return True
-    else:
-        return False
-
-
-def rar_list(file):
-    # Warning: requires unrar to be installed
-    unrar_cmd = ['unrar', 'lt', file]
-    out = call_process(unrar_cmd)
-    if out['returncode'] == 0:
-        stdout = out['stdout']
-        lines = [line.strip() for line in stdout.splitlines()[6:15]]
-        attribs = dict(line.split(': ') for line in lines)
-        attribs = dict((k.lower(), v) for k, v in attribs.items())
-        attribs['path'] = os.path.dirname(file)
-        return attribs
-    else:
-        return False
 
 
 def ffprobe(file):
