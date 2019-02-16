@@ -2,7 +2,15 @@
   "LOG_LEVEL": 10,
   "LOG_TSFORMAT": "YYYYMMDD",
   "REMOVE_SRC_FILE": 0,
-  "DB_CONN": "mysql+pymysql://vidcon_test:vidcon_test_123@jarvis:3307/vidcon_test?charset=utf8",
+  "DB": {
+    "DRIVER": "mysql+pymysql",
+    "HOST": "jarvis",
+    "PORT": 3307,
+    "DBNAME": "vidcon_test",
+    "CHARSET": "utf8",
+    "USER": "vidcon_test",
+    "PASS": "vidcon_test_123"
+  },
   "DB_TBL_VIDCON_QUEUE": "queue",
   "VIDCON_DEFALUT_ACODEC": "ac3 -ac 6 -ab 640k -max_muxing_queue_size 1024 -ar 48000",
   "VIDCON_DEFALUT_VCODEC": "libx264 -profile:v high -level:v 4.0",

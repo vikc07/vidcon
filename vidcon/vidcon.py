@@ -5,11 +5,8 @@ todo: after successful completion perform cleanup
 """
 
 from sqlalchemy import *
-from datetime import datetime
-import json
 import os
 import shutil
-from gpm import formatting
 from lib import func
 
 

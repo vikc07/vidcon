@@ -43,7 +43,10 @@ conn = None
 
 def init_queue():
     global conn
-    engine = create_engine(cfg.DB_CONN)
+    dbconn = "{driver}://{user}:{passwd}@{host}:{port}/{dbname}?charset={charset}"
+    dbconn = dbconn.format(driver=cfg.DB['DRIVER'], host=cfg.DB['HOST'], port=cfg.DB['PORT'], dbname=cfg.DB['DBNAME'],
+                  charset=cfg.DB['CHARSET'], user=cfg.DB['USER'], passwd=cfg.DB['PASS'])
+    engine = create_engine(dbconn)
     if conn is None:
         conn = engine.connect()
     queue = Table(cfg.DB_TBL_VIDCON_QUEUE, MetaData(engine), autoload=True)
@@ -56,14 +59,20 @@ def close_queue():
 
 
 def get_all_files_in_queue():
-    movies_queued = []
     queue = init_queue()
-    sql = select([queue.c.input_file, queue.c.complete_flag]).order_by(queue.c.ts_added)
+    sql = select([queue.c.input_file, queue.c.complete_flag, queue.c.ts_complete,
+                  queue.c.ts_modified, queue.c.id]).order_by(
+        queue.c.ts_added)
     result = conn.execute(sql)
     rows = result.fetchall()
+    movies = {}
     for row in rows:
-       movies_queued.append(row['input_file'])
-    return movies_queued
+        movies[row['input_file']] = {}
+        movies[row['input_file']]['id'] = row['id']
+        movies[row['input_file']]['ts_complete'] = row['ts_complete']
+        movies[row['input_file']]['complete_flag'] = row['complete_flag']
+        movies[row['input_file']]['ts_modified'] = row['ts_modified']
+    return movies
 
 
 def get_all_incomplete_files_in_queue():
@@ -78,6 +87,14 @@ def add_to_queue(movie):
     queue = init_queue()
     result = conn.execute(queue.insert().values(movie))
     return result.inserted_primary_key
+
+
+def update_metadata_in_queue(movie):
+    queue = init_queue()
+    movie['ts_modified'] = datetime.now()
+    id = movie['id']
+    movie.pop('id')
+    return conn.execute(queue.update().where(queue.c.id == id).values(movie))
 
 
 def mark_completed_in_queue(id):

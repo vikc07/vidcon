@@ -6,6 +6,7 @@ handling of vob and dat files
 
 from sqlalchemy import *
 from datetime import datetime
+import time
 import json
 import os
 from gpm import formatting
@@ -27,19 +28,37 @@ def do():
         ext = func.get_file_extension(filename)
         fsize_in_bytes = os.stat(filename).st_size
         fsize = formatting.fsize_pretty(fsize_in_bytes, return_size_only=True, unit='gb')
+        flastmodified_days = (time.time() - os.path.getmtime(filename)) / (60*60*24)
+
+        log.debug('file: {}'.format(filename))
+        log.debug('fsize: {}gb'.format(round(fsize,2)))
+        log.debug('flastmodified_days: {}'.format(round(flastmodified_days,2)))
+
         # Is it a file, of required file type and not already in the queue? If yes, then proceed
-        if os.path.isfile(filename) and (ext in cfg.VIDCON_FILE_TYPES) and (filename not in queue):
-            movie = {}
+        movie = dict()
+        movie['path'] = filename
+        movie['title'] = func.get_file_name_without_extension(filename)
+        movie['orig_fsize'] = fsize_in_bytes
+        if os.path.isfile(filename) and (ext in cfg.VIDCON_FILE_TYPES) and (filename not in queue.keys()):
             if ((ext != '.m2ts') and (fsize > 0.5)) or (ext == '.m2ts') or (fsize > 2.5):
                 log.info(ext.strip('.') + ': ' + filename)
-                movie['path'] = filename
-                movie['title'] = func.get_file_name_without_extension(filename)
-                movie['orig_fsize'] = fsize_in_bytes
+                movie['operation'] = 'insert'
                 movies.append(movie)
             else:
                 log.debug('skipped: ' + filename)
+        elif filename in queue.keys() and flastmodified_days < 1 and queue[filename]['complete_flag'] == 1:
+            # just update the metadata
+            metadata_last_updated_days = (datetime.now() - queue[filename]['ts_modified']).total_seconds() / (60 * 60 *
+                                                                                                            24)
+            log.debug('metadata_last_updated_days: {}'.format(round(metadata_last_updated_days,2)))
+            if metadata_last_updated_days > flastmodified_days:
+                movie['operation'] = 'update'
+                movie['id'] = queue[filename]['id']
+                movies.append(movie)
+            else:
+                log.debug('skipped as metadata has already been updated {}'.format(filename))
         else:
-            log.debug('skipped: ' + filename)
+            log.debug('skipped {}'.format(filename))
 
     for movie in movies:
         convert_audio = False
@@ -201,10 +220,25 @@ def do():
                     'orig_acodec_bit_rate': orig_acodec_bit_rate,
                     'ffprobe_metadata': ffprobe
                 }
-                queue_pos = func.add_to_queue(row)
-                if (len(queue_pos) > 0) and (not no_conversion_required):
-                    log.info('queue position: ' + str(queue_pos[0]))
-                    movies_success.append(movie_title)
+                if movie['operation'] == 'insert':
+                    log.info('adding to queue')
+                    queue_pos = func.add_to_queue(row)
+                    if len(queue_pos) > 0:
+                        if not no_conversion_required:
+                            log.info('queue position: ' + str(queue_pos[0]))
+                            movies_success.append(movie_title)
+                    else:
+                        log.error('error adding to queue')
+                        err = 1
+                else:
+                    log.info('updating metadata in queue')
+                    row['id'] = movie['id']
+                    row.pop('ts_complete')
+                    if func.update_metadata_in_queue(row):
+                        log.info('metadata updated')
+                    else:
+                        log.error('error updating metadata')
+                        err = 1
 
             else:
                 log.error('error occurred while running ffprobe')
@@ -221,7 +255,7 @@ def do():
             msg = msg + '\n'
 
         if len(movies_not_converted) > 0:
-            msg = msg + 'No conversion required for following files:\n'
+            msg = msg + 'No conversion required and metadata updated for following files:\n'
             for movie in movies_not_converted:
                 msg = msg + movie + '\n'
             msg = msg + '\n'
