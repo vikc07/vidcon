@@ -97,6 +97,11 @@ def update_metadata_in_queue(movie):
     return conn.execute(queue.update().where(queue.c.id == id).values(movie))
 
 
+def remove_entry_from_queue(id):
+    queue = init_queue()
+    return conn.execute(queue.delete().where(queue.c.id == id))
+
+
 def mark_completed_in_queue(id):
     queue = init_queue()
     return conn.execute(queue.update().where(queue.c.id == id).values(complete_flag=1, ts_complete=datetime.now()))
@@ -116,6 +121,10 @@ def get_files():
     files = []
     for folder in cfg.VIDCON_MONITOR_FOLDER:
         files = files + ls(folder, recursive=cfg.VIDCON_MONITOR_FOLDER_RECURSIVE)
+
+    for index, file in enumerate(files):
+        if not os.path.isfile(file):
+            files.pop(index)
 
     return files
 

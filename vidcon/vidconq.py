@@ -24,7 +24,8 @@ def do():
     movies_not_converted = []
     movies_success = []
     log.info('fetching all files')
-    for filename in func.get_files():
+    monitored_files = func.get_files()
+    for filename in monitored_files:
         ext = func.get_file_extension(filename)
         fsize_in_bytes = os.stat(filename).st_size
         fsize = formatting.fsize_pretty(fsize_in_bytes, return_size_only=True, unit='gb')
@@ -39,7 +40,7 @@ def do():
         movie['path'] = filename
         movie['title'] = func.get_file_name_without_extension(filename)
         movie['orig_fsize'] = fsize_in_bytes
-        if os.path.isfile(filename) and (ext in cfg.VIDCON_FILE_TYPES) and (filename not in queue.keys()):
+        if (ext in cfg.VIDCON_FILE_TYPES) and (filename not in queue.keys()):
             if ((ext != '.m2ts') and (fsize > 0.5)) or (ext == '.m2ts') or (fsize > 2.5):
                 log.info(ext.strip('.') + ': ' + filename)
                 movie['operation'] = 'insert'
@@ -244,7 +245,20 @@ def do():
                 log.error('error occurred while running ffprobe')
                 err = 1
 
-    if len(movies_success) > 0 or len(movies_not_converted) > 0:
+    # Clean up dead files in database
+    dead_entries_removed = []
+    log.info('cleaning up database')
+    for file in queue.keys():
+        if not os.path.isfile(file):
+            log.info('removing dead entry: {}'.format(file))
+            if func.remove_entry_from_queue(queue[file]['id']):
+                log.info('successfully removed')
+                dead_entries_removed.append(file)
+            else:
+                log.error('error occurred while removing dead entry')
+                err = 1
+
+    if len(movies_success) > 0 or len(movies_not_converted) > 0 or len(dead_entries_removed) > 0:
         subject = 'Video Converter Queue Manager update'
         msg = ''
 
@@ -258,6 +272,12 @@ def do():
             msg = msg + 'No conversion required and metadata updated for following files:\n'
             for movie in movies_not_converted:
                 msg = msg + movie + '\n'
+            msg = msg + '\n'
+
+        if len(dead_entries_removed) > 0:
+            msg = msg + 'Cleaned up database removing dead entries:\n'
+            for entry in dead_entries_removed:
+                msg = msg + entry + '\n'
             msg = msg + '\n'
 
         log.info('sending alert')
