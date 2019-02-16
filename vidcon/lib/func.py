@@ -123,7 +123,7 @@ def get_files():
         files = files + ls(folder, recursive=cfg.VIDCON_MONITOR_FOLDER_RECURSIVE)
 
     for index, file in enumerate(files):
-        if not os.path.isfile(file):
+        if os.path.isdir(file):
             files.pop(index)
 
     return files
