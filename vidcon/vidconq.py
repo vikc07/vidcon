@@ -215,13 +215,13 @@ def do():
         msg = ''
 
         if len(movies_success) > 0:
-            msg = msg + 'Following movies were queued for conversion:\n'
+            msg = msg + 'Following files were queued for conversion:\n'
             for movie in movies_success:
                 msg = msg + movie + '\n'
             msg = msg + '\n'
 
         if len(movies_not_converted) > 0:
-            msg = msg + 'No conversion required for following movies:\n'
+            msg = msg + 'No conversion required for following files:\n'
             for movie in movies_not_converted:
                 msg = msg + movie + '\n'
             msg = msg + '\n'

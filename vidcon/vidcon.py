@@ -102,12 +102,12 @@ def do():
         subject = 'Video Convertor update'
         msg = ''
         if converted_count > 0:
-            msg = msg + 'Successfully processed following movies:\n'
+            msg = msg + 'Successfully processed following files:\n'
             for movie in converted_movies:
                 msg = msg + movie + '\n'
 
         if not_converted_count > 0:
-            msg = msg + 'Could not process following movies:\n'
+            msg = msg + 'Could not process following files:\n'
             for movie in not_converted_movies:
                 msg = msg + movie + '\n'
 
