@@ -49,7 +49,7 @@ def init_queue():
     engine = create_engine(dbconn)
     if conn is None:
         conn = engine.connect()
-    queue = Table(cfg.DB_TBL_VIDCON_QUEUE, MetaData(engine), autoload=True)
+    queue = Table(cfg.DB['TBL_QUEUE'], MetaData(engine), autoload=True)
 
     return queue
 

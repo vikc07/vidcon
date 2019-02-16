@@ -9,9 +9,9 @@
     "DBNAME": "vidcon_test",
     "CHARSET": "utf8",
     "USER": "vidcon_test",
-    "PASS": "vidcon_test_123"
+    "PASS": "vidcon_test_123",
+    "TBL_QUEUE": "queue"
   },
-  "DB_TBL_VIDCON_QUEUE": "queue",
   "VIDCON_DEFALUT_ACODEC": "ac3 -ac 6 -ab 640k -max_muxing_queue_size 1024 -ar 48000",
   "VIDCON_DEFALUT_VCODEC": "libx264 -profile:v high -level:v 4.0",
   "VIDCON_DEFAULT_EXT": ".mkv",
