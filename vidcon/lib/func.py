@@ -91,7 +91,7 @@ def add_to_queue(movie):
 
 def update_metadata_in_queue(movie):
     queue = init_queue()
-    movie['ts_modified'] = datetime.now()
+    movie['ts_modified'] = datetime.utcnow()
     id = movie['id']
     movie.pop('id')
     return conn.execute(queue.update().where(queue.c.id == id).values(movie))
@@ -104,7 +104,7 @@ def remove_entry_from_queue(id):
 
 def mark_completed_in_queue(id):
     queue = init_queue()
-    return conn.execute(queue.update().where(queue.c.id == id).values(complete_flag=1, ts_complete=datetime.now()))
+    return conn.execute(queue.update().where(queue.c.id == id).values(complete_flag=1, ts_complete=datetime.utcnow()))
 
 
 def ls(path, recursive=False):

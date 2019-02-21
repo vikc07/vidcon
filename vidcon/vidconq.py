@@ -49,10 +49,10 @@ def do():
                 log.debug('skipped: ' + filename)
         elif filename in queue.keys() and flastmodified_days < 1 and queue[filename]['complete_flag'] == 1:
             # just update the metadata
-            metadata_last_updated_days = (datetime.now() - queue[filename]['ts_modified']).total_seconds() / (60 * 60 *
-                                                                                                            24)
+            metadata_last_updated_days = (datetime.utcnow() - queue[filename]['ts_modified']).total_seconds() /\
+                                         (60 * 60 * 24)
             log.debug('metadata_last_updated_days: {}'.format(round(metadata_last_updated_days,2)))
-            if metadata_last_updated_days > flastmodified_days:
+            if metadata_last_updated_days < flastmodified_days:
                 movie['operation'] = 'update'
                 movie['id'] = queue[filename]['id']
                 movies.append(movie)
@@ -187,7 +187,7 @@ def do():
                     log.info('no conversion required')
                     no_conversion_required = True
                     complete_flag = True
-                    ts_complete = datetime.now()
+                    ts_complete = datetime.utcnow()
                     movies_not_converted.append(movie_title)
 
                 # Update queue
