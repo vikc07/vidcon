@@ -52,7 +52,9 @@ def do():
             metadata_last_updated_days = (datetime.utcnow() - queue[filename]['ts_modified']).total_seconds() /\
                                          (60 * 60 * 24)
             log.debug('metadata_last_updated_days: {}'.format(round(metadata_last_updated_days,2)))
-            if metadata_last_updated_days < flastmodified_days:
+
+            # Is file updated after the last metadata update?
+            if flastmodified_days < metadata_last_updated_days:
                 movie['operation'] = 'update'
                 movie['id'] = queue[filename]['id']
                 movies.append(movie)
