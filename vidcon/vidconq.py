@@ -29,11 +29,11 @@ def do():
         ext = func.get_file_extension(filename)
         fsize_in_bytes = os.stat(filename).st_size
         fsize = formatting.fsize_pretty(fsize_in_bytes, return_size_only=True, unit='gb')
-        flastmodified_days = (time.time() - os.path.getmtime(filename)) / (60*60*24)
+        num_of_days_since_file_updated = (time.time() - os.path.getmtime(filename)) / (60*60*24)
 
         log.debug('file: {}'.format(filename))
         log.debug('fsize: {}gb'.format(round(fsize,2)))
-        log.debug('flastmodified_days: {}'.format(round(flastmodified_days,2)))
+        log.debug('num_of_days_since_file_updated: {}'.format(round(num_of_days_since_file_updated,2)))
 
         # Is it a file, of required file type and not already in the queue? If yes, then proceed
         movie = dict()
@@ -47,14 +47,14 @@ def do():
                 movies.append(movie)
             else:
                 log.debug('skipped: ' + filename)
-        elif filename in queue.keys() and flastmodified_days < 1 and queue[filename]['complete_flag'] == 1:
+        elif filename in queue.keys() and num_of_days_since_file_updated < 1 and queue[filename]['complete_flag'] == 1:
             # just update the metadata
-            metadata_last_updated_days = (datetime.utcnow() - queue[filename]['ts_modified']).total_seconds() /\
-                                         (60 * 60 * 24)
-            log.debug('metadata_last_updated_days: {}'.format(round(metadata_last_updated_days,2)))
+            num_of_days_since_metadata_updated = (datetime.utcnow() - queue[filename]['ts_modified']).total_seconds() /\
+                                         (60*60*24)
+            log.debug('num_of_days_since_metadata_updated: {}'.format(round(num_of_days_since_metadata_updated, 2)))
 
             # Is file updated after the last metadata update?
-            if flastmodified_days < metadata_last_updated_days:
+            if num_of_days_since_metadata_updated > 1:
                 movie['operation'] = 'update'
                 movie['id'] = queue[filename]['id']
                 movies.append(movie)
